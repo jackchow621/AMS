@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ghost.mapper.TeleconferenceMapper">
+	<!-- 查询所有电话会议申请表信息 -->
+	<select id="findAllTeleconference" resultType="teleconference">
+		select * from Teleconference
+	</select>
+	
+	<!-- 根据条件查询特定电话会议申请表信息 -->
+	<select id="findTeleconferenceByEmpId" parameterType="int" resultType="teleconference">
+		select * from Teleconference where emp_id=#{emp_id}
+	</select>
+	
+	<!-- 根据电话会议申请表的ID来查询特定的数据 -->
+	<select id="findTeleconferenceById" parameterType="int" resultType="teleconference">
+		select * from Teleconference where teleconference_id=#{teleconference_id}
+	</select>
+	
+	<!-- 总条数 -->
+	<select id="totalSize" parameterType="map" resultType="int">
+		select count(*) from Teleconference
+		<if test="emp_id!=null">
+			where emp_id=#{emp_id}
+		</if>
+		<if test="assign_emp_id!=null">
+			where approvalStatus='同意'and assign_emp_id=#{assign_emp_id} 
+		</if>
+		<if test="process_emp_id!=null">
+			where assignStatus='已分配' and process_emp_id=#{process_emp_id} 
+		</if>
+	</select>
+	
+	<!-- 添加电话会议申请表信息 -->
+	<insert id="addTeleconference" parameterType="teleconference">
+		<selectKey keyProperty="teleconference_id" order="AFTER" resultType="java.lang.Integer">
+			select
+			LAST_INSERT_ID()
+		</selectKey>
+		insert into
+		teleconference(emp_id,meetDate,room,beginDate,endDate,conventioner,isDevice,requirement,applicationDate,telephone,approvalStatus)
+		values(#{emp_id},#{meetDate},#{room},#{beginDate},#{endDate},#{conventioner},#{isDevice},#{requirement},#{applicationDate},#{telephone},#{approvalStatus})
+	</insert>
+	
+	<!-- 删除电话会议申请表信息 -->
+	<delete id="deleteTeleconference" parameterType="int">
+		delete from Teleconference
+		where teleconference_id=#{teleconference_id}
+	</delete>
+	
+	
+	<!-- 修改电话会议申请表信息 -->
+	<update id="updateTeleconference" parameterType="teleconference">
+		update Teleconference set
+			emp_id=#{emp_id},meetDate=#{meetDate},room=#{room},beginDate=#{beginDate},endDate=#{endDate},
+			conventioner=#{conventioner},isDevice=#{isDevice},requirement=#{requirement},telephone=#{telephone},
+			applicationDate=#{applicationDate},
+			approval_emp_id=#{approval_emp_id},approvalStatus=#{approvalStatus},approvalDate=#{approvalDate},
+			assign_emp_id=#{assign_emp_id},assignStatus=#{assignStatus},assignDate=#{assignDate},
+			process_emp_id=#{process_emp_id},processStatus=#{processStatus},processDate=#{processDate},
+			comment=#{comment}
+		where teleconference_id=#{teleconference_id}
+	</update>
+	
+	<!-- 电话会议申请单提交审批、分配、处理 -->
+	<!-- 定义resultMap -->
+	<resultMap type="teleconference" id="teleconferenceResultMap">
+		<id column="teleconference_id" property="teleconference_id"/>
+		<result column="emp_id" property="emp_id"/>
+		<result column="meetDate" property="meetDate"/>
+		<result column="room" property="room"/>
+		<result column="beginDate" property="beginDate"/>
+		<result column="endDate" property="endDate"/>
+		<result column="conventioner" property="conventioner"/>
+		<result column="isDevice" property="isDevice"/>
+		<result column="requirement" property="requirement"/>
+		<result column="applicationDate" property="applicationDate"/>
+		<result column="telephone" property="telephone"/>
+		<result column="approval_emp_id" property="approval_emp_id"/>
+		<result column="approvalStatus" property="approvalStatus"/>
+		<result column="approvalDate" property="approvalDate"/>
+		<result column="assign_emp_id" property="assign_emp_id"/>
+		<result column="assignStatus" property="assignStatus"/>
+		<result column="assignDate" property="assignDate"/>
+		<result column="process_emp_id" property="process_emp_id"/>
+		<result column="processStatus" property="processStatus"/>
+		<result column="processDate" property="processDate"/>
+		<result column="comment" property="comment"/>
+		<!-- 申请表与员工之间的关联：1：1 -->
+		<association property="employee" javaType="employee">
+			<result column="empName" property="empName"/>
+			<result column="dept_Id" property="dept_Id"/>
+		</association>
+	</resultMap>
+	
+	<select id="queryTeleconferenceForDispose" parameterType="map" resultMap="teleconferenceResultMap">
+		select Teleconference.*,employee.empName,employee.dept_id
+		from employee,Teleconference
+		where employee.emp_id=Teleconference.emp_id
+		<!-- 审批查找拼接 -->
+		<if test="dept_id!=null">
+			and employee.dept_id=#{dept_Id};
+		</if>
+		<!-- 分配拼接查找 -->
+		<if test="assign_emp_id!=null">
+			and approvalStatus='同意' and Teleconference.assign_emp_id=#{assign_emp_id} 
+		</if>
+		<!-- 处理拼接查找 -->
+		<if test="process_emp_id!=null">
+			and assignStatus='已分配' and Teleconference.process_emp_id=#{process_emp_id} 
+		</if>
+	</select>
+</mapper>

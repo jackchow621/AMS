@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ghost.mapper.EmailMapper">
+	<!-- 查询所有邮箱申请表信息 -->
+	<select id="findAllEmail" resultType="email">
+		select * from Email
+	</select>
+	
+	<!-- 根据条件查询特定邮箱申请表信息 -->
+	<select id="findEmailByEmpId" parameterType="int" resultType="email">
+		select * from email where emp_id=#{emp_id}
+	</select>
+	
+	<!-- 根据邮箱的ID来查询特定的数据 -->
+	<select id="findEmailById" parameterType="int" resultType="email">
+		select * from email where email_id=#{email_id}
+	</select>
+	
+	<!-- 添加邮箱申请表信息 -->
+	<insert id="addEmail" parameterType="email">
+		<selectKey keyProperty="email_id" order="AFTER" resultType="java.lang.Integer">
+			select
+			LAST_INSERT_ID()
+		</selectKey>
+		insert into
+		email(emp_id,type,beginDate,endDate,reason,applicationDate,approval_emp_id,approvalStatus,approvalDate,assign_emp_id,assignStatus,assignDate,process_emp_id,processStatus,processDate,comment)
+		values(#{emp_id},#{type},#{beginDate},#{endDate},#{reason},#{applicationDate},#{approval_emp_id},#{approvalStatus},#{approvalDate},#{assign_emp_id},#{assignStatus},#{assignDate},#{process_emp_id},#{processStatus},#{processDate},#{comment})
+	</insert>
+	
+	<!-- 删除邮箱申请表信息 -->
+	<delete id="deleteEmail" parameterType="int">
+		delete from email
+		where email_id=#{email_id}
+	</delete>
+	
+	
+	<!-- 修改邮箱申请表信息 -->
+	<update id="updateEmail" parameterType="email">
+		update email set
+			emp_id=#{emp_id},type=#{type},beginDate=#{beginDate},endDate=#{endDate},
+			reason=#{reason},applicationDate=#{applicationDate},approval_emp_id=#{approval_emp_id},
+			approvalStatus=#{approvalStatus},approvalDate=#{approvalDate},assign_emp_id=#{assign_emp_id},
+			assignStatus=#{assignStatus},assignDate=#{assignDate},process_emp_id=#{process_emp_id},
+			processStatus=#{processStatus},processDate=#{processDate},comment=#{comment}
+		where email_id=#{email_id}
+	</update>
+	
+	<!-- 查询email的总记录数 -->
+	<select id="emailTotalSize" parameterType="int" resultType="int">
+		select count(*) from email where emp_id=#{emp_id}
+	</select>
+	
+	
+	<!-- email申请单提交审批、分配、处理 -->
+	<!-- 定义resultMap -->
+	<resultMap type="email" id="emailResultMap">
+		<id column="email_id" property="email_id"/>
+		<result column="emp_id" property="emp_id"/>
+		<result column="type" property="type"/>
+		<result column="beginDate" property="beginDate"/>
+		<result column="endDate" property="endDate"/>
+		<result column="reason" property="reason"/>
+		<result column="applicationDate" property="applicationDate"/>
+		<result column="approval_emp_id" property="approval_emp_id"/>
+		<result column="approvalStatus" property="approvalStatus"/>
+		<result column="approvalDate" property="approvalDate"/>
+		<result column="assign_emp_id" property="assign_emp_id"/>
+		<result column="assignStatus" property="assignStatus"/>
+		<result column="assignDate" property="assignDate"/>
+		<result column="process_emp_id" property="process_emp_id"/>
+		<result column="processStatus" property="processStatus"/>
+		<result column="processDate" property="processDate"/>
+		<result column="comment" property="comment"/>
+		
+		<!-- email申请表与员工表的关系：1:1 -->
+		<association property="employee" javaType="employee">
+			<result column="empName" property="empName"/>
+			<result column="dept_Id" property="dept_Id"/>
+		</association>
+	</resultMap>
+	
+	
+	<!-- 审批、分配、处理三步的查询 -->
+	<select id="queryEmailForDispose" parameterType="map" resultMap="emailResultMap">
+		select email.*,employee.empName,employee.dept_Id
+		from employee,email
+		where employee.emp_id=email.emp_id
+		<!-- 审批查找拼接 -->
+		<if test="dept_Id!=null">
+			and employee.dept_Id=#{dept_Id};
+		</if>
+		<!-- 分配拼接查找 -->
+		<if test="assign_emp_id!=null">
+			and approvalStatus='同意' and email.assign_emp_id=#{assign_emp_id}
+		</if>
+		<!-- 处理拼接查找 -->
+		<if test="process_emp_id!=null">
+			and assignStatus='已分配' and email.process_emp_id=#{process_emp_id}
+		</if>
+	</select>
+</mapper>

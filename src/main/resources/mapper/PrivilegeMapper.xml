@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ghost.mapper.PrivilegeMapper">
+
+	<!-- 查询登录用户的权限 -->
+	<select id="findForLogin" parameterType="map" resultType="menus">
+		select m.menu_id,m.menu_pid,m.menu_name,m.menu_url
+		from T_role_menu_privilege mp,T_emp_role r,menus m,T_privilege p
+		where mp.role_id=r.role_id
+		and mp.menu_id=m.menu_id
+		and mp.privilege_id=p.privilege_id
+		<if test="emp_id!=null">
+			and r.emp_id=#{emp_id}
+		</if>
+		<if test="menu_pid!=null">
+			and m.menu_pid=#{menu_pid}
+		</if>
+	</select>
+	
+	<!-- 总条数 -->
+	<select id="totalSize" resultType="int">
+		select count(*) from t_emp_role
+	</select>
+	
+	<!-- 定义findAllEmpPrivilege的resultMap -->
+	<resultMap type="emp_Role" id="roleMap">
+		<id column="emp_id" property="emp_id"/>
+		<id column="role_id" property="role_id"/>
+		<association property="employee" javaType="employee">
+			<result column="empName" property="empName"/>
+		</association>
+	</resultMap>
+	<!-- 查询所有人的角色及按员工姓名进行模糊查询 -->
+	<select id="findAllEmpPrivilege" parameterType="map" resultMap="roleMap">
+		select er.*,e.empName
+		from t_emp_role er,employee e
+		where er.emp_id=e.emp_id
+		<if test="str!=null">
+			and e.empName like '%${str}%'
+		</if>
+	</select>
+	
+	<!-- 查找要添加的员工编号是否存在 -->
+	<select id="findEmployeeByEmpid" parameterType="int" resultType="employee">
+		select * from employee where emp_id=#{emp_id}	
+	</select>
+	
+	<!-- 员工增加角色 -->
+	<insert id="savePrivilege" parameterType="map">
+		insert into T_emp_role values(#{emp_id},#{role_id})
+	</insert>
+	
+	<!-- 员工删除角色 -->
+	<delete id="deletePrivilege" parameterType="int">
+		delete from T_emp_role where emp_id=#{emp_id}
+	</delete>
+	
+	<!-- 员工修改角色 -->
+	<update id="updatePrivilege" parameterType="emp_Role">
+		update T_emp_role set role_id=#{role_id} where emp_id=#{emp_id}
+	</update>
+</mapper>

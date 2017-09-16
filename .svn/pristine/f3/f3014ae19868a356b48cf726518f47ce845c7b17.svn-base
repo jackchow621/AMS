@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ghost.mapper.DeptmentMapper">
+
+	<!-- 查询所有部门信息 -->
+	<select id="findAllDeptments" resultType="deptment">
+		select * from deptment
+	</select>
+
+	<!-- 添加部门 -->
+	<insert id="addDeptment" parameterType="deptment">
+		<selectKey keyProperty="dept_Id" order="AFTER" resultType="java.lang.Integer">
+			select
+			LAST_INSERT_ID()
+		</selectKey>
+		insert into
+		deptment(dept_Id,deptName)
+		values(#{dept_Id},#{deptName})
+	</insert>
+
+	<!-- 删除部门 -->
+	<delete id="deleteDeptments" parameterType="int">
+		delete from deptment
+		where dept_Id=#{dept_Id}
+	</delete>
+
+	<!-- 更新部门 -->
+	<update id="updateDeptment" parameterType="deptment">
+		update deptment set
+		deptName=#{deptName}
+		where dept_Id=#{dept_Id}
+	</update>
+	<!-- 总条数 -->
+	<select id="totalSize" resultType="int">
+		select count(*) from deptment
+	</select>
+</mapper>

@@ -1,0 +1,120 @@
+package com.ghost.controller;
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.ghost.domain.Employee;
+import com.ghost.domain.Leaves;
+import com.ghost.domain.Memory;
+import com.ghost.service.MemoryService;
+
+@Controller
+@RequestMapping("/Memory")
+public class MemoryController {
+	@Autowired
+	private MemoryService memoryService;
+
+	
+	//查询所有内存空间申请列表
+	@RequestMapping("/findAllMemory")
+	public ModelAndView findAllMemory() throws Exception{
+		System.out.println("===========findAllMemory============");
+		//内存空间申请列表
+		List<Memory> memoryList=memoryService.findAllMemory();
+		
+		//创建modelAndView准备填充数据、设置视图
+		ModelAndView modelAndView=new ModelAndView();
+		
+		//填充数据
+		modelAndView.addObject("memoryList", memoryList);
+		//视图
+		modelAndView.setViewName("MemoryList.jsp");
+		
+		
+		return modelAndView;
+	}
+	
+	
+	//根据员工的id来查询特定的数据
+	@RequestMapping("/queryMemory")
+	public ModelAndView findMemoryByEmpId(HttpServletRequest request)throws Exception{
+		System.out.println("===========findMemoryByEmpId============");
+		Employee employee = (Employee) request.getAttribute("employee");
+		int emp_id = employee.getEmp_Id();
+		List<Memory> memoryList = memoryService.findMemoryByEmpId(emp_id);
+		ModelAndView modelAndView = new ModelAndView();
+		modelAndView.addObject("memoryList",memoryList);
+		modelAndView.setViewName("memoryList.jsp");
+		return modelAndView;
+	}
+	
+	
+	//根据内存空间申请表的id来查询特定的内存空间申请表的数据
+	@RequestMapping("/findMemoryById")
+	public ModelAndView findMemoryById(HttpServletRequest request) throws Exception{
+		System.out.println("===========findMemoryById============");
+		//接收内存空间申请表的id
+		int memory_id=Integer.parseInt(request.getParameter("memory_id"));
+		
+		System.out.println(memory_id+"================");
+		//根据内存空间申请的id来查询的有关数据
+		Memory memory=memoryService.findMemoryById(memory_id);
+		
+		
+		//创建modelAndView准备填充数据、设置视图
+		ModelAndView modelAndView=new ModelAndView();
+		
+		//填充数据
+		modelAndView.addObject("memory", memory);
+		//视图
+		modelAndView.setViewName("editMemory.jsp");
+		
+		return modelAndView;
+		
+	}
+	
+	
+	//增加内存空间申请表的数据
+	@RequestMapping("/addMemory")
+	public String addMemory(Memory memory) throws Exception{
+		System.out.println("===========addMemory============");
+		
+		memoryService.addMemory(memory);
+		
+		return "findAllMemory.action";
+		
+	}
+	
+	
+	//修改内存空间申请表的数据
+	@RequestMapping("/updateMemory")
+	public String updateMemory(Memory memory) throws Exception{
+		System.out.println("===========updateMemory============");
+		
+		memoryService.updateMemory(memory);
+		
+		return "findAllMemory.action";
+		
+	}
+	
+	
+	//删除内存空间申请表的数据
+	@RequestMapping("/deleteMemory")
+	public String deleteMemory(int memory_id) throws Exception{
+		System.out.println("===========deleteMemory============");
+		
+		memoryService.deleteMemory(memory_id);
+		/*for(int i=0;i<emails_id.length;i++){
+			emailService.deleteEmail(emails_id[i]);
+		}*/
+		
+		return "findAllMemory.action";
+		
+	}
+}

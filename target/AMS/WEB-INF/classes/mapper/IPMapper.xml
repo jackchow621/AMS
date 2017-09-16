@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ghost.mapper.IPMapper">
+	<!-- 按员工编号查找 -->
+	<select id="findByEmpid" parameterType="int" resultType="iP">
+		select * from IP where emp_id=#{emp_id} 
+	</select>
+	
+	<!-- 按IP地址申请单编号查找 -->
+	<select id="findByIPid" parameterType="int" resultType="iP">
+		select * from IP where IP_id=#{IP_id} 
+	</select>
+	
+	<!-- 创建IP地址申请单 -->
+	<insert id="addIP" parameterType="iP">
+		<selectKey keyProperty="IP_id" order="AFTER" resultType="java.lang.Integer">
+			select
+			LAST_INSERT_ID()
+		</selectKey>
+		<!-- ,approval_emp_id,approvalStatus,approvalDate,assign_emp_id,assignStatus,assignDate,process_emp_id,processStatus,processDate,comment 
+		,#{approval_emp_id},#{approvalStatus},#{approvalDate},#{assign_emp_id},#{assignStatus},#{assignDate},#{process_emp_id},#{processStatus},#{processDate},#{comment}-->
+		insert into IP(emp_id,reason,number,place,IF_num,useDay,applicationDate,approvalStatus) 
+		values(#{emp_id},#{reason},#{number},#{place},#{IF_num},#{useDay},#{applicationDate},#{approvalStatus})
+	</insert>
+	
+	<!-- 删除IP地址申请单  -->
+	<delete id="delIP" parameterType="int">
+		delete from IP where IP_id=#{IP_id}
+	</delete>
+	
+	<!-- 修改IP地址申请单 -->
+	<update id="editIP" parameterType="iP">
+		update IP set emp_id=#{emp_id},reason=#{reason},number=#{number},place=#{place},IF_num=#{IF_num},useDay=#{useDay},applicationDate=#{applicationDate},
+		approval_emp_id=#{approval_emp_id},approvalStatus=#{approvalStatus},approvalDate=#{approvalDate},
+		assign_emp_id=#{assign_emp_id},assignStatus=#{assignStatus},assignDate=#{assignDate},
+		process_emp_id=#{process_emp_id},processStatus=#{processStatus},processDate=#{processDate},comment=#{comment} 
+		where IP_id=#{IP_id};
+	</update>
+	
+	<!-- IP地址申请单提交审批、分配、处理 -->
+	<!-- 定义resultMap -->
+	<resultMap type="iP" id="ipResultMap">
+		<id column="IP_id" property="IP_id"/>
+		<result column="emp_id" property="emp_id"/>
+		<result column="reason" property="reason"/>
+		<result column="number" property="number"/>
+		<result column="place" property="place"/>
+		<result column="IF_num" property="IF_num"/>
+		<result column="useDay" property="useDay"/>
+		<result column="applicationDate" property="applicationDate"/>
+		<result column="approval_emp_id" property="approval_emp_id"/>
+		<result column="approvalStatus" property="approvalStatus"/>
+		<result column="approvalDate" property="approvalDate"/>
+		<result column="assign_emp_id" property="assign_emp_id"/>
+		<result column="assignStatus" property="assignStatus"/>
+		<result column="assignDate" property="assignDate"/>
+		<result column="process_emp_id" property="process_emp_id"/>
+		<result column="processStatus" property="processStatus"/>
+		<result column="processDate" property="processDate"/>
+		<result column="comment" property="comment"/>
+		<!-- 申请表与员工之间的关联：1：1 -->
+		<association property="employee" javaType="employee">
+			<result column="empName" property="empName"/>
+			<result column="dept_Id" property="dept_Id"/>
+		</association>
+	</resultMap>
+	
+	<select id="queryIPForDispose" parameterType="map" resultMap="ipResultMap">
+		select ip.*,employee.empName,employee.dept_id
+		from employee,ip
+		where employee.emp_id=ip.emp_id
+		<!-- 审批查找拼接 -->
+		<if test="dept_id!=null">
+			and employee.dept_id=#{dept_id};
+		</if>
+		<!-- 分配拼接查找 -->
+		<if test="assign_emp_id!=null">
+			and ip.assign_emp_id=#{assign_emp_id} and approvalStatus='同意'
+		</if>
+		<!-- 处理拼接查找 -->
+		<if test="process_emp_id!=null">
+			and ip.process_emp_id=#{process_emp_id} and assignStatus='已分配'
+		</if>
+	</select>
+</mapper>

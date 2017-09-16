@@ -1,0 +1,214 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:mongo="http://www.springframework.org/schema/data/mongo"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+		http://www.springframework.org/schema/beans/spring-beans-3.2.xsd 
+		http://www.springframework.org/schema/mvc 
+		http://www.springframework.org/schema/mvc/spring-mvc-3.2.xsd 
+		http://www.springframework.org/schema/context 
+		http://www.springframework.org/schema/context/spring-context-3.2.xsd 
+		http://www.springframework.org/schema/aop 
+		http://www.springframework.org/schema/aop/spring-aop-3.2.xsd 
+		http://www.springframework.org/schema/tx 
+		http://www.springframework.org/schema/tx/spring-tx-3.2.xsd
+		http://www.springframework.org/schema/data/mongo 
+		http://www.springframework.org/schema/data/mongo/spring-mongo-1.5.xsd ">
+
+	<!-- 1、加载db文件 -->
+	<context:property-placeholder location="classpath:config.properties" />
+
+	<!-- 2、创建数据源 -->
+	<!-- <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" -->
+	<bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource" init-method="init"
+    destroy-method="close" >
+    <property name="driverClassName">
+      <value>${jdbc_driverClassName}</value>
+    </property>
+    <property name="url">
+      <value>${jdbc_url}</value>
+    </property>
+    <property name="username">
+      <value>${jdbc_username}</value>
+    </property>
+    <property name="password">
+      <value>${jdbc_password}</value>
+    </property>
+    <!-- 连接池最大使用连接数 -->
+    <property name="maxActive">
+      <value>20</value>
+    </property>
+    <!-- 初始化连接大小 -->
+    <property name="initialSize">
+      <value>1</value>
+    </property>
+    <!-- 获取连接最大等待时间 -->
+    <property name="maxWait">
+      <value>60000</value>
+    </property>
+    <!-- 连接池最大空闲 -->
+    <property name="maxIdle">
+      <value>20</value>
+    </property>
+    <!-- 连接池最小空闲 -->
+    <property name="minIdle">
+      <value>3</value>
+    </property>
+    <!-- 自动清除无用连接 -->
+    <!-- <property name="removeAbandoned">
+      <value>true</value>
+    </property> -->
+    <!-- 清除无用连接的等待时间 -->
+    <!-- <property name="removeAbandonedTimeout">
+      <value>180</value>
+    </property> -->
+    <!-- 连接属性 -->
+    <property name="connectionProperties">
+      <value>clientEncoding=UTF-8</value>
+    </property>
+  </bean>
+
+	<!-- mybatis文件配置，扫描所有mapper文件 -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<!-- 数据库连接池 -->
+		<property name="dataSource" ref="dataSource" />
+		<!-- 加载mapper的xml文件 -->
+		<property name="mapperLocations" value="classpath:mapper/*.xml" />
+		<!-- 加载mybatis的全局配置文件 -->
+		<property name="configLocation" value="classpath:SqlMapConfig.xml" />
+	</bean>
+	
+	<!-- configLocation为mybatis属性 mapperLocations为所有mapper -->
+
+	<!-- spring与mybatis整合配置，创建mapper -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="com.ghost.mapper" />
+		<property name="sqlSessionFactoryBeanName" value="sqlSessionFactory" />
+	</bean>
+
+	<!-- 5、配置事务 -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<!-- 数据源 -->
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	
+	<!-- 6、配置memcached -->
+	<bean id="memcachedPool" class="com.danga.MemCached.SockIOPool"  
+        factory-method="getInstance" init-method="initialize" destroy-method="shutDown">  
+        <property name="servers">  
+        <!-- ${memcached.server} -->
+            <list>  
+                <value>192.168.1.99:2222</value>
+            </list>  
+        </property>  
+        <property name="weights">
+        	<list>
+	            <value>1</value>  
+        	</list>  
+        </property>  
+        <property name="initConn">  
+            <value>5</value>  
+        </property>  
+        <property name="minConn">  
+            <value>5</value>  
+        </property>
+        <property name="maxConn">  
+            <value>250</value>  
+        </property>  
+        <property name="maintSleep">  
+            <value>30</value>  
+        </property>  
+        <property name="nagle">  
+            <value>false</value>  
+        </property>
+        <property name="maxIdle">  
+            <value>21600000</value>  
+        </property>  
+        <property name="socketConnectTO">  
+            <value>0</value>  
+        </property>  
+        <property name="socketTO">  
+            <value>3000</value>  
+        </property>  
+        <property name="hashingAlg">  
+            <value>3</value>  
+        </property>  
+    </bean>
+    <bean id="memCachedClient" class="com.danga.MemCached.MemCachedClient">
+    	<constructor-arg>
+    		<value>neeaMemcachedPool</value>
+    		<!-- <value>memCachedPool</value> -->
+    	</constructor-arg>
+    </bean>
+    <!-- 7、配置activeMQ -->
+	<bean id="broker" class="org.apache.activemq.broker.BrokerService" init-method="start" destroy-method="stop"> 
+		<property name="brokerName" value="myBroker"/>
+		<property name="persistent" value="false"/>
+		<property name="transportConnectorURIs">
+			<list>
+				<value>tcp://localhost:61616</value>
+			</list>
+		</property>
+	</bean>
+	<bean id="jmsFactory" class="org.apache.activemq.pool.PooledConnectionFactory" destroy-method="stop">
+		<property name="connectionFactory">
+			<bean class="org.apache.activemq.ActiveMQConnectionFactory">
+				<property name="brokerURL">
+					<value>tcp://192.168.1.99:61616</value>
+				</property>
+			</bean>
+		</property>
+		<property name="maxConnections" value="100" />
+	</bean>
+	<bean id="jmsTemplate" class="org.springframework.jms.core.JmsTemplate">
+        <property name="connectionFactory" ref="jmsFactory" />
+        <property name="defaultDestination" ref="destination" />
+        <property name="messageConverter">
+        	<bean class="org.springframework.jms.support.converter.SimpleMessageConverter"/>
+        </property>
+	</bean>
+	<bean id="destination" class="org.apache.activemq.command.ActiveMQQueue">
+		<constructor-arg index="0" value="spring-queue" />
+	</bean>
+	<bean id="destinationTopic" class="org.apache.activemq.command.ActiveMQTopic">
+		<constructor-arg index="0" value="spring-topic" />
+	</bean>
+	<bean id="jmsContainer" class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+		<property name="connectionFactory" ref="jmsFactory"/>
+		<property name="destination" ref="destinationTopic"/>
+		<property name="messageListener" ref="messageListener"/>
+	</bean>
+	<bean id="messageListener" class="com.ghost.activemq.MyMessageListener"/>
+	<!-- 8、配置mongoDB -->
+	<mongo:mongo host="192.168.1.99" port="20000"/>
+	<bean id="mongoTemplate" class="org.springframework.data.mongodb.core.MongoTemplate">
+		<constructor-arg ref="mongo"/>
+		<constructor-arg name="databaseName" value="ams"/>
+	</bean>
+	
+	<!-- 通知 -->
+	<tx:advice id="txAdvice" transaction-manager="transactionManager">
+		<tx:attributes>
+			<!-- 传播行为 -->
+			<tx:method name="save*" propagation="REQUIRED" />
+			<tx:method name="insert*" propagation="REQUIRED" />
+			<tx:method name="delete*" propagation="REQUIRED" />
+			<tx:method name="update*" propagation="REQUIRED" />
+			<tx:method name="find*" propagation="SUPPORTS" read-only="true" />
+			<tx:method name="get*" propagation="SUPPORTS" read-only="true" />
+		</tx:attributes>
+	</tx:advice>
+
+	<!-- 切面 -->
+	<aop:config>
+		<aop:advisor advice-ref="txAdvice"
+			pointcut="execution(* com.ghost.service.impl.*.*(..))" />
+	</aop:config>
+
+	<!-- 6、配置service层 -->
+	<!-- <bean id="employeeService" class="com.ghost.service.impl.EmployeeServiceImpl" /> -->
+	<bean id="myMongoDBSpring" class="com.ghost.mongodb.MyMongoDBSpring" />
+	 
+</beans>

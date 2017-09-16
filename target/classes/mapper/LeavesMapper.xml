@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ghost.mapper.LeavesMapper">
+	<!-- 查询所有请假申请表信息 -->
+	<select id="findAllLeaves" resultType="leaves">
+		select * from Leaves
+	</select>
+	
+	<!-- 根据条件查询特定请假申请表信息 -->
+	<select id="findLeavesByEmpId" parameterType="int" resultType="leaves">
+		select * from leaves where emp_id=#{emp_id}
+	</select>
+	
+	<!-- 根据请假申请表的ID来查询特定的数据 -->
+	<select id="findLeavesById" parameterType="int" resultType="leaves">
+		select * from leaves where leave_id=#{leave_id}
+	</select>
+	
+	<!-- 添加请假申请表信息 -->
+	<insert id="addLeaves" parameterType="leaves">
+		<selectKey keyProperty="leave_id" order="AFTER" resultType="java.lang.Integer">
+			select
+			LAST_INSERT_ID()
+		</selectKey>
+		insert into
+		leaves(emp_id,beginDate,endDate,days,type,reason,applicationDate,approvalStatus,approvalDate,approval_emp_id,comment)
+		values(#{emp_id},#{beginDate},#{endDate},#{days},#{type},#{reason},#{applicationDate},#{approvalStatus},#{approvalDate},#{approval_emp_id},#{comment})
+	</insert>
+	
+	<!-- 删除请假申请表信息 -->
+	<delete id="deleteLeaves" parameterType="int">
+		delete from leaves
+		where leave_id=#{leave_id}
+	</delete>
+	
+	
+	<!-- 修改请假申请表信息 -->
+	<update id="updateLeaves" parameterType="leaves">
+		update leaves set
+		 emp_id=#{emp_id},beginDate=#{beginDate},endDate=#{endDate},days=#{days},type=#{type},reason=#{reason},applicationDate=#{applicationDate},approvalStatus=#{approvalStatus},approvalDate=#{approvalDate},approval_emp_id=#{approval_emp_id},comment=#{comment} 
+		where leave_id=#{leave_id}
+	</update>
+	
+	<!-- 根据部门id查找所有请假申请 -->
+	<select id="findLeavesByDeptId" parameterType="int" resultType="leaves">
+		select leaves.*,employee.empName,employee.dept_id
+		from employee,leaves
+		where employee.emp_id=leaves.emp_id and employee.dept_id=#{dept_id};
+	</select>
+	
+	
+</mapper>
